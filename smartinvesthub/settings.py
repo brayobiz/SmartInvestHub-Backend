@@ -1,22 +1,21 @@
-from pathlib import Path
 import os
+from pathlib import Path
+import dj_database_url
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-# Quick-start development settings - unsuitable for production
-# See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
-
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-eq4bch64ya&75m#p%leypa_tw#x50yhs9m3pm78l_y0=5)b$0a'
+SECRET_KEY = os.getenv('DJANGO_SECRET_KEY', 'django-insecure-eq4bch64ya&75m#p%leypa_tw#x50yhs9m3pm78l_y0=5)b$0a')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.getenv('DEBUG', 'False') == 'True'
+DEBUG = os.getenv('DEBUG', 'True') == 'True'
+
+# Allowed hosts for local and Render deployment
 ALLOWED_HOSTS = os.getenv('RENDER_EXTERNAL_HOSTNAME', 'localhost').split(',')
-SECRET_KEY = os.getenv('DJANGO_SECRET_KEY', 'your-secure-key')
-
-
-ALLOWED_HOSTS = []
+if 'RENDER_EXTERNAL_HOSTNAME' in os.environ:
+    ALLOWED_HOSTS.append(os.environ['RENDER_EXTERNAL_HOSTNAME'])
+ALLOWED_HOSTS.extend(['127.0.0.1', 'localhost'])
 
 # Application definition
 INSTALLED_APPS = [
@@ -29,15 +28,15 @@ INSTALLED_APPS = [
     'rest_framework',
     'rest_framework.authtoken',
     'corsheaders',
-    'core',
+    'core',  # Your app
 ]
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
-    'django.contrib.sessions.middleware.SessionMiddleware',
-    'corsheaders.middleware.CorsMiddleware',  # Moved up
     'whitenoise.middleware.WhiteNoiseMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
+    'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
@@ -45,7 +44,7 @@ MIDDLEWARE = [
 ]
 
 CORS_ALLOWED_ORIGINS = [
-    "http://localhost:3000",
+    "https://smartinvesthub.vercel.app",
 ]
 
 ROOT_URLCONF = 'smartinvesthub.urls'
@@ -67,12 +66,11 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'smartinvesthub.wsgi.application'
 
-# Database
+# Database (PostgreSQL for Render, SQLite fallback locally)
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
-    }
+    'default': dj_database_url.parse(
+        os.getenv('DATABASE_URL', f'sqlite:///{os.path.join(BASE_DIR, "db.sqlite3")}')
+    )
 }
 
 # Password validation
@@ -91,6 +89,7 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
+# REST Framework
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
         'rest_framework.authentication.TokenAuthentication',
